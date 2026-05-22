@@ -7,6 +7,17 @@ factual claim is tagged to a source**.
 > This is a research tool, **not** a trading bot or prediction engine. It does not give
 > buy/sell recommendations. It presents evidence and uncertainty so you can form your own view.
 
+## Screenshots
+
+Stock report with inline citations and the deterministic confidence badge (the report is long,
+so it is shown in two parts):
+
+![Stock report, part 1](assets/report-1.png)
+
+![Stock report, part 2](assets/report-2.png)
+
+<!-- Optional: add a View Validator screenshot, e.g. ![View validator](assets/validator.png) -->
+
 ## Features
 
 - **Citation-tagged reports** — the LLM tags each claim with `[cite:N]`; the UI resolves these
