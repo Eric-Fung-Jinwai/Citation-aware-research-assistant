@@ -76,17 +76,17 @@ so it is shown in two parts):
 
 ```
 backend/
-  main.py                 FastAPI app + routers + error handler
-  routers/                /analyze, /validate-view
-  skills/                 market_data, web_access, tech_indicator,
-                          stock_retro, finance_rag, confidence_gate,
-                          confidence_score, view_validator
-  models/                 Pydantic models (citation, report)
-  prompts/                synthesis + citation rules
-  utils/                  citation_parser, sec_fetcher, vector_store, dates
+├──  main.py                 FastAPI app + routers + error handler
+├──  routers/                /analyze, /validate-view
+├──  skills/                 market_data, web_access, tech_indicator,
+                             stock_retro, finance_rag, confidence_gate,
+                             confidence_score, view_validator
+├──  models/                 Pydantic models (citation, report)
+├──  prompts/                synthesis + citation rules
+├──  utils/                  citation_parser, sec_fetcher, vector_store, dates
 frontend/
-  app.py                  Streamlit app (Stock Report + View Validator tabs)
-  components/             report_view, confidence_badge, validator_panel
+├──  app.py                  Streamlit app (Stock Report + View Validator tabs)
+├──  components/             report_view, confidence_badge, validator_panel
 requirements.txt
 smoke_test.py
 ```
@@ -126,6 +126,18 @@ streamlit run frontend/app.py
 
 Open the Streamlit URL (default http://localhost:8501). The frontend calls the backend at
 `http://localhost:8000` by default; override with the `BACKEND_URL` environment variable.
+
+### Stopping the app
+
+Each process runs until you stop it:
+
+- **Running in the terminal:** press `Ctrl+C` in each terminal.
+- **Running detached / in the background:** stop it by port:
+
+```bash
+lsof -ti :8000 | xargs kill   # backend
+lsof -ti :8501 | xargs kill   # frontend
+```
 
 ## API
 

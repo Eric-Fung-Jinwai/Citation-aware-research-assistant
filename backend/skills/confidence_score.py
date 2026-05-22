@@ -16,7 +16,6 @@ from backend.skills.confidence_gate import get_confidence_tier
 
 
 def _technical_votes(summary: dict, indicators: dict) -> tuple[int, int]:
-    """Tally bullish vs bearish votes across the available price/technical signals."""
     bull = bear = 0
     close = summary.get("latest_close")
 
