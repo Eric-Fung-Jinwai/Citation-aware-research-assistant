@@ -1,4 +1,4 @@
-# Stock Analysis System
+# Citation-aware research assistant
 
 A citation-aware US equity research assistant. It synthesizes market data, technical
 indicators, financial news, and SEC filings into structured research reports where **every
