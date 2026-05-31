@@ -54,6 +54,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up QEMU (enables arm64 emulation on the amd64 runner)
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -75,6 +78,7 @@ jobs:
           context: .
           file: backend/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ steps.owner.outputs.name }}/citation-assistant-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -85,6 +89,7 @@ jobs:
           context: .
           file: frontend/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ steps.owner.outputs.name }}/citation-assistant-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
