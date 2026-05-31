@@ -1,5 +1,7 @@
 # Citation-aware research assistant
 
+![CI](https://github.com/Eric-Fung-Jinwai/Citation-aware-research-assistant/actions/workflows/ci.yml/badge.svg)
+
 A citation-aware US equity research assistant. It synthesizes market data, technical
 indicators, financial news, and SEC filings into structured research reports where **every
 factual claim is tagged to a source**.
@@ -33,6 +35,12 @@ so it is shown in two parts):
 - **SEC filing RAG** — semantic search over EDGAR filings via a local ChromaDB vector store.
 - **Graceful degradation** — if a data source is unavailable, the affected section is marked
   unavailable rather than fabricated.
+- **Redis caching** — repeated queries for the same ticker/window are served from cache
+  (full report: 4 h, market data: 15 min, news: 1 h, SEC RAG: 24 h). Redis is optional;
+  the app runs normally without it.
+- **Docker** — both services are containerised and wired together with `docker compose up`.
+- **CI** — GitHub Actions runs the offline test suite and validates both Docker image builds
+  on every push and pull request.
 
 ## Architecture
 
@@ -69,8 +77,11 @@ so it is shown in two parts):
 | Indicators | pandas-ta (RSI, MACD, Bollinger Bands, ATR, OBV, EMA, moving averages) |
 | Trading calendar | pandas-market-calendars |
 | Vector DB / embeddings | ChromaDB + sentence-transformers (`all-MiniLM-L6-v2`) |
+| Caching | Redis (optional — app degrades gracefully without it) |
 | Backend | FastAPI + Uvicorn |
 | Frontend | Streamlit |
+| Containers | Docker + Docker Compose |
+| CI | GitHub Actions (offline tests + Docker image builds) |
 
 ## Project structure
 
@@ -83,10 +94,14 @@ backend/
                              confidence_score, view_validator
 ├──  models/                 Pydantic models (citation, report)
 ├──  prompts/                synthesis + citation rules
-├──  utils/                  citation_parser, sec_fetcher, vector_store, dates
+├──  utils/                  citation_parser, sec_fetcher, vector_store, cache, dates
 frontend/
 ├──  app.py                  Streamlit app (Stock Report + View Validator tabs)
 ├──  components/             report_view, confidence_badge, validator_panel
+├──  Dockerfile
+backend/Dockerfile
+docker-compose.yml
+.github/workflows/ci.yml
 requirements.txt
 smoke_test.py
 ```
@@ -111,8 +126,25 @@ Required environment variables (`.env`):
 | `OPENAI_API_KEY` | OpenAI | report synthesis, thesis direction |
 | `POLYGON_API_KEY` | Polygon.io | market data, price backtests |
 | `NEWS_API_KEY` | NewsAPI | news evidence (degrades gracefully if missing) |
+| `REDIS_URL` | Redis | caching (optional; default `redis://localhost:6379`) |
 
 ## Running
+
+### Docker (recommended)
+
+```bash
+docker compose up --build
+```
+
+Opens automatically:
+- Frontend → http://localhost:8501
+- Backend API → http://localhost:8000
+
+Redis is included in the compose file; no separate setup needed.
+
+To stop: `Ctrl+C`, then `docker compose down`.
+
+### Without Docker
 
 The app runs as two processes. Start the backend first, then the frontend.
 
@@ -127,12 +159,10 @@ streamlit run frontend/app.py
 Open the Streamlit URL (default http://localhost:8501). The frontend calls the backend at
 `http://localhost:8000` by default; override with the `BACKEND_URL` environment variable.
 
-### Stopping the app
+Redis is optional when running without Docker — if `REDIS_URL` is not set or Redis is
+unreachable, caching is silently skipped.
 
-Each process runs until you stop it:
-
-- **Running in the terminal:** press `Ctrl+C` in each terminal.
-- **Running detached / in the background:** stop it by port:
+### Stopping the app (non-Docker)
 
 ```bash
 lsof -ti :8000 | xargs kill   # backend
@@ -162,8 +192,15 @@ The breakdown is shown in the UI under "How this score was computed."
 ## Testing
 
 ```bash
-pytest
+# Offline tests only (no API keys, no network — runs in CI)
+pytest smoke_test.py -m "not live" -v
+
+# All tests including live integration tests (requires keys in .env)
+RUN_LIVE=1 pytest smoke_test.py -v
 ```
+
+The offline suite covers citation models, the confidence gate, synthetic indicator
+computation, and Redis cache get/set round-trips via a mock client.
 
 ## Notes
 

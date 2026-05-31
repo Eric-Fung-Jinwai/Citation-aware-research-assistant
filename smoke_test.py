@@ -103,6 +103,39 @@ def test_extract_confidence(text, expected):
     assert _extract_confidence(text) == expected
 
 
+async def test_cache_round_trip():
+    """Offline — mock Redis client, no live Redis needed."""
+    from unittest.mock import AsyncMock, patch
+    import backend.utils.cache as cache_mod
+
+    store: dict = {}
+
+    async def _get(key):
+        return store.get(key)
+
+    async def _set(key, value, ex=None):
+        store[key] = value
+
+    mock_client = AsyncMock()
+    mock_client.get = _get
+    mock_client.set = _set
+
+    with patch.object(cache_mod, "_redis", new=AsyncMock(return_value=mock_client)):
+        assert await cache_mod.get_cached("k") is None          # miss
+        await cache_mod.set_cached("k", {"score": 42}, ttl_seconds=300)
+        assert await cache_mod.get_cached("k") == {"score": 42}  # hit
+
+
+async def test_cache_unavailable_redis():
+    """Offline — cache silently no-ops when Redis is unreachable."""
+    from unittest.mock import AsyncMock, patch
+    import backend.utils.cache as cache_mod
+
+    with patch.object(cache_mod, "_redis", new=AsyncMock(return_value=None)):
+        assert await cache_mod.get_cached("k") is None
+        await cache_mod.set_cached("k", {"x": 1}, ttl_seconds=60)  # must not raise
+
+
 async def test_tech_indicator_synthetic():
     """Offline — also proves pandas-ta actually computes on this arch."""
     from backend.skills.tech_indicator import compute_indicators
