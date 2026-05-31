@@ -64,13 +64,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # GHCR requires lowercase image names; GitHub usernames can contain capitals.
+      - name: Compute lowercase owner
+        id: owner
+        run: echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: backend/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/citation-assistant-backend:latest
+          tags: ghcr.io/${{ steps.owner.outputs.name }}/citation-assistant-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -80,6 +85,6 @@ jobs:
           context: .
           file: frontend/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/citation-assistant-frontend:latest
+          tags: ghcr.io/${{ steps.owner.outputs.name }}/citation-assistant-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
