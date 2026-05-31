@@ -11,7 +11,9 @@ dist/
 build/
 .DS_Store
 .idea/
-assets
+.omm
+.claude
+.understand-anything
 # Internal working docs — not part of the shipped app
 PROJECT_CONTEXT.md
 TODO.md

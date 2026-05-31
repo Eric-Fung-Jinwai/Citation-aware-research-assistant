@@ -13,6 +13,7 @@ from backend.skills.finance_rag import query_sec_filings
 from backend.skills.market_data import fetch_market_data
 from backend.skills.tech_indicator import compute_indicators
 from backend.skills.web_access import fetch_news
+from backend.utils.cache import get_cached, set_cached
 
 _WINDOW_TO_DAYS = {"7d": 7, "30d": 30, "90d": 90}
 
@@ -138,6 +139,10 @@ async def run_stock_retro(
     days = _WINDOW_TO_DAYS.get(window, 7)
     generated_at = datetime.now(timezone.utc).isoformat()
 
+    cached = await get_cached(f"report:{ticker}:{window}:{company_name or ''}")
+    if cached is not None:
+        return cached
+
     # market-data and news run concurrently; tech-indicator needs market-data output
     market_result, news_result = await asyncio.gather(
         fetch_market_data(ticker, window),
@@ -218,8 +223,10 @@ async def run_stock_retro(
         confidence_breakdown=confidence["breakdown"],
     )
 
-    return SkillResult(
+    result = SkillResult(
         status="success",
         data=output.model_dump(),
         source="stock-retro",
     ).model_dump()
+    await set_cached(f"report:{ticker}:{window}:{company_name or ''}", result, ttl_seconds=4 * 3600)
+    return result

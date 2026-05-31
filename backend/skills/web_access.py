@@ -4,13 +4,18 @@ from datetime import datetime, timedelta
 import httpx
 
 from backend.models.citation import CitationObject, SkillResult
+from backend.utils.cache import get_cached, set_cached
 
 NEWSAPI_BASE = "https://newsapi.org/v2"
 
 
 async def fetch_news(ticker: str, company_name: str | None = None, days: int = 7) -> dict:
-    api_key = os.getenv("NEWS_API_KEY")
     query = company_name or ticker
+    cached = await get_cached(f"news:{ticker}:{days}:{query}")
+    if cached is not None:
+        return cached
+
+    api_key = os.getenv("NEWS_API_KEY")
     from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
     try:
@@ -81,9 +86,11 @@ async def fetch_news(ticker: str, company_name: str | None = None, days: int = 7
             )
         )
 
-    return SkillResult(
+    result = SkillResult(
         status="success",
         data={"ticker": ticker, "articles": news_items},
         citations=citations,
         source="web-access",
     ).model_dump()
+    await set_cached(f"news:{ticker}:{days}:{query}", result, ttl_seconds=3600)
+    return result

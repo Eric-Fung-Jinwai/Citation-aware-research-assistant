@@ -6,6 +6,7 @@ import httpx
 import pandas as pd
 
 from backend.models.citation import CitationObject, SkillResult
+from backend.utils.cache import get_cached, set_cached
 from backend.utils.dates import last_trading_day
 
 POLYGON_BASE = "https://api.polygon.io"
@@ -16,6 +17,11 @@ WINDOW_DAYS = {"7d": 7, "30d": 30, "90d": 90}
 async def fetch_market_data(
     ticker: str, window: str = "7d", as_of: datetime | None = None
 ) -> dict:
+    as_of_key = as_of.date().isoformat() if as_of else "live"
+    cached = await get_cached(f"market:{ticker}:{window}:{as_of_key}")
+    if cached is not None:
+        return cached
+
     api_key = os.getenv("POLYGON_API_KEY")
     window_days = WINDOW_DAYS.get(window, 7)
 
@@ -110,6 +116,8 @@ async def fetch_market_data(
         },
     }
 
-    return SkillResult(
+    result = SkillResult(
         status="success", data=data, citations=[citation], source="market-data"
     ).model_dump()
+    await set_cached(f"market:{ticker}:{window}:{as_of_key}", result, ttl_seconds=900)
+    return result

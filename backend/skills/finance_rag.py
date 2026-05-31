@@ -6,10 +6,13 @@ SEC filings, then returns the top-k most relevant chunks as EvidenceBlock[]
 wrapped in a SkillResult envelope.
 """
 
+import hashlib
+
 from sentence_transformers import SentenceTransformer
 
 from backend.models.citation import SkillResult
 from backend.models.report import EvidenceBlock, EvidenceCitation
+from backend.utils.cache import get_cached, set_cached
 from backend.utils.sec_fetcher import fetch_and_index
 from backend.utils.vector_store import query_chunks, ticker_chunk_count
 
@@ -34,6 +37,10 @@ async def query_sec_filings(
       { "blocks": [EvidenceBlock.model_dump(), ...] }
     """
     ticker = ticker.upper()
+    query_hash = hashlib.md5(query.encode()).hexdigest()[:8]
+    cached = await get_cached(f"rag:{ticker}:{query_hash}:{top_k}")
+    if cached is not None:
+        return cached
 
     # Index filings if not yet in the vector store
     if ticker_chunk_count(ticker) == 0:
@@ -88,8 +95,10 @@ async def query_sec_filings(
             )
         )
 
-    return SkillResult(
+    result = SkillResult(
         status="success",
         data={"blocks": [b.model_dump() for b in blocks]},
         source="finance-rag",
     ).model_dump()
+    await set_cached(f"rag:{ticker}:{query_hash}:{top_k}", result, ttl_seconds=86400)
+    return result

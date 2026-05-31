@@ -1,0 +1,36 @@
+# Secrets — never bake these into an image
+.env
+
+# Git history — not needed inside a container
+.git
+.gitignore
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ChromaDB data — mounted as a named volume instead
+data/
+
+# Dev / test artefacts
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Mac noise
+.DS_Store
+
+# Docs and assets — not needed at runtime
+assets/
+*.md
+
+# IDE and tool config
+.idea/
+.omm/
+.claude/
+.understand-anything/
