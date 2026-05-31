@@ -50,6 +50,12 @@ so it is shown in two parts):
                  │  frontend    │ ◀───────────────────  │  /analyze /validate│
                  └──────────────┘                       └─────────┬──────────┘
                                                                    │
+                                                     ┌─────────────▼─────────────┐
+                                                     │        Redis cache         │
+                                                     │  report 4h · market 15min  │
+                                                     │  news 1h  · RAG 24h        │
+                                                     └─────────────┬─────────────┘
+                                                             miss  │
                             ┌──────────────────────────────────────┼───────────────────────┐
                             ▼                     ▼                 ▼                        ▼
                       market-data           tech-indicator       web-access            finance-rag
@@ -132,17 +138,30 @@ Required environment variables (`.env`):
 
 ### Docker (recommended)
 
+Pre-built images are published to GitHub Container Registry on every merge to `main`.
+No build step needed — Docker pulls them automatically.
+
 ```bash
-docker compose up --build
+# 1. Copy the env file and fill in your API keys
+cp .env.example .env
+
+# 2. Pull images and start all services
+docker compose up
 ```
 
 Opens automatically:
 - Frontend → http://localhost:8501
 - Backend API → http://localhost:8000
 
-Redis is included in the compose file; no separate setup needed.
+Redis is included; no separate setup needed. To stop: `Ctrl+C`, then `docker compose down`.
 
-To stop: `Ctrl+C`, then `docker compose down`.
+#### Build locally instead
+
+If you want to run from source rather than the published images:
+
+```bash
+docker compose up --build
+```
 
 ### Without Docker
 

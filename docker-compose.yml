@@ -9,6 +9,7 @@ services:
 
   # ── Backend (FastAPI) ─────────────────────────────────────────────────────────
   backend:
+    image: ghcr.io/eric-fung-jinwai/citation-assistant-backend:latest
     build:
       context: .                   # build context = project root (so COPY works)
       dockerfile: backend/Dockerfile
@@ -32,6 +33,7 @@ services:
 
   # ── Frontend (Streamlit) ──────────────────────────────────────────────────────
   frontend:
+    image: ghcr.io/eric-fung-jinwai/citation-assistant-frontend:latest
     build:
       context: .
       dockerfile: frontend/Dockerfile
