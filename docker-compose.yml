@@ -9,7 +9,7 @@ services:
 
   # ── Backend (FastAPI) ─────────────────────────────────────────────────────────
   backend:
-    image: ghcr.io/eric-fung-jinwai/citation-assistant-backend:latest
+    image: ghcr.io/eric-fung-jinwai/citation-assistant-backend:latest  # already lowercase
     build:
       context: .                   # build context = project root (so COPY works)
       dockerfile: backend/Dockerfile

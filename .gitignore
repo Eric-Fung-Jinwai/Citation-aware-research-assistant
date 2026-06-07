@@ -18,3 +18,5 @@ build/
 PROJECT_CONTEXT.md
 TODO.md
 revised_us_stock_analysis_agent.md
+benchmark.py
+rag_metrics.py
