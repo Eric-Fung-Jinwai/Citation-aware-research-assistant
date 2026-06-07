@@ -1,0 +1,48 @@
+name: PR Review
+
+# Advisory AI review on every PR into main. An OpenAI model reads the diff and
+# posts a single (sticky) comment with a merge verdict and concrete change
+# suggestions. It NEVER merges — a human merges manually once checks are green.
+#
+# Pairs with ci.yml (which runs the tests + Docker builds). Together they give the
+# "新分支到 main → 自动检测 → 合并建议/修改建议" flow:
+#   ci.yml      → green/red gate (tests, image builds)
+#   pr-review.yml → natural-language merge & change suggestions
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write   # required to post the review comment
+
+jobs:
+  ai-review:
+    name: OpenAI PR review (advisory)
+    runs-on: ubuntu-latest
+
+    # Skip PRs opened from forks: they get a read-only token and no access to the
+    # OPENAI_API_KEY secret, so the review would fail. Same-repo branch PRs work.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Pin to the same major as the app (openai==2.36.0 in requirements.txt).
+      - name: Install OpenAI SDK
+        run: pip install "openai>=2,<3"
+
+      - name: Run OpenAI reviewer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_REVIEW_MODEL: gpt-4o-mini   # override here for a stronger model
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python scripts/pr_review.py

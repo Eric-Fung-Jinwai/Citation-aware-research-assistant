@@ -34,3 +34,6 @@ assets/
 .omm/
 .claude/
 .understand-anything/
+
+rag_metrics.py
+benchmark.py
